@@ -4,105 +4,328 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Urenregistratie</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-    <script>
-        function toonSectie(sectie) {
-            document.getElementById("menu").style.display = "none";
-            document.getElementById("nieuweWerkbon").style.display = "none";
-            document.getElementById("openWerkbon").style.display = "none";
-            document.getElementById(sectie).style.display = "block";
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
         }
-
-        function zetDatumVandaag() {
-            let vandaag = new Date().toISOString().split('T')[0];
-            document.getElementById("datum").value = vandaag;
+        h1 {
+            text-align: center;
         }
-    </script>
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #ccc;
+        }
+        input[type="text"], input[type="date"] {
+            padding: 10px;
+            width: 100%;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .timer {
+            font-size: 2em;
+            margin: 20px 0;
+        }
+        .activity-list {
+            margin-top: 20px;
+        }
+        .activity {
+            margin-bottom: 15px;
+        }
+        .edit-time-buttons {
+            margin-top: 15px;
+        }
+        .edit-time-buttons button {
+            background-color: #ffa500;
+        }
+    </style>
 </head>
-<body onload="zetDatumVandaag()">
-    <div id="menu">
-        <h1>Urenregistratie</h1>
-        <button onclick="toonSectie('nieuweWerkbon')">Nieuwe werkbon aanmaken</button>
-        <button onclick="toonSectie('openWerkbon')">Open werkbon</button>
+<body>
+
+<div class="container">
+    <h1>Werkbon en Activiteiten</h1>
+    <div id="workOrderSection">
+        <h2>Werkbon Aanmaken</h2>
+        <label for="workOrderName">Naam werkbon:</label>
+        <input type="text" id="workOrderName" placeholder="Werkbon naam">
+        <button onclick="createWorkOrder()">Maak werkbon</button>
+        <button onclick="saveWorkOrder()" id="saveButton" disabled>Werkbon Opslaan</button>
     </div>
-    
-    <div id="nieuweWerkbon" style="display:none;">
-        <h2>Nieuwe urenbon</h2>
-        <form id="urenbonForm">
-            <label>Naam urenbon: <input type="text" id="urenbonNaam" required></label>
-            <button type="submit">Aanmaken</button>
-        </form>
+
+    <div id="activitySection" style="display:none;">
+        <h2>Activiteit Toevoegen</h2>
+        <label for="activityName">Activiteit naam:</label>
+        <input type="text" id="activityName" placeholder="Activiteit naam">
+        <button onclick="startActivity()">Start Activiteit</button>
+        <div class="timer">
+            <span id="timerDisplay">00:00:00</span>
+        </div>
+        <button id="pauseButton" onclick="pauseTimer()" disabled>Pauze</button>
+        <button id="resumeButton" onclick="resumeTimer()" disabled>Hervatten</button>
+        <button id="endButton" onclick="endActivity()" disabled>Stop</button>
     </div>
-    
-    <div id="openWerkbon" style="display:none;">
-        <h2>Bestaande urenbonnen</h2>
-        <select id="urenbonSelect"></select>
-        <button onclick="wisselUrenbon()">Laden</button>
-        
-        <h2>Uren invoeren</h2>
-        <form id="urenForm">
-            <label>Datum: <input type="date" id="datum"></label><br>
-            <label>Beschrijving: <input type="text" id="beschrijving"></label><br>
-            <button type="button" onclick="startStopwatch()">Start</button>
-            <button type="button" onclick="stopStopwatch()">Stop</button>
-            <button type="button" onclick="resetStopwatch()">Reset</button>
-            <p>Gewerkte tijd: <span id="stopwatchDisplay">00:00:00</span></p>
-            <button type="button" onclick="adjustTime(5)">+5 min</button>
-            <button type="button" onclick="adjustTime(10)">+10 min</button>
-            <button type="button" onclick="adjustTime(30)">+30 min</button>
-            <button type="button" onclick="adjustTime(60)">+60 min</button>
-            <button type="button" onclick="adjustTime(-5)">-5 min</button>
-            <button type="button" onclick="adjustTime(-10)">-10 min</button>
-            <button type="button" onclick="adjustTime(-30)">-30 min</button>
-            <button type="button" onclick="adjustTime(-60)">-60 min</button>
-        </form>
+
+    <div id="activityListSection" style="display:none;">
+        <h2>Activiteiten Overzicht</h2>
+        <div id="activityList" class="activity-list"></div>
+        <!-- Toevoeging Werkbon opslaan knop -->
+        <button onclick="saveWorkOrder()" id="saveWorkOrderButton">Werkbon Opslaan</button>
     </div>
-    
-    <script>
-        let stopwatchStart, stopwatchInterval, elapsedSeconds = 0;
-        
-        function startStopwatch() {
-            stopwatchStart = Date.now() - (elapsedSeconds * 1000);
-            stopwatchInterval = setInterval(updateStopwatch, 1000);
-        }
 
-        function stopStopwatch() {
-            clearInterval(stopwatchInterval);
-            roundTime();
-        }
+    <!-- Lijst van opgeslagen werkbonnen -->
+    <div class="saved-work-orders">
+        <h2>Opgeslagen Werkbonnen</h2>
+        <div id="savedWorkOrdersList"></div>
+    </div>
 
-        function resetStopwatch() {
-            clearInterval(stopwatchInterval);
-            elapsedSeconds = 0;
-            document.getElementById("stopwatchDisplay").textContent = "00:00:00";
-        }
+</div>
 
-        function updateStopwatch() {
-            elapsedSeconds = Math.floor((Date.now() - stopwatchStart) / 1000);
-            let hours = Math.floor(elapsedSeconds / 3600);
-            let minutes = Math.floor((elapsedSeconds % 3600) / 60);
-            let seconds = elapsedSeconds % 60;
-            document.getElementById("stopwatchDisplay").textContent = 
-                `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
-        }
+<script>
+    let workOrders = [];
+    let currentWorkOrder = null;
+    let currentActivity = null;
+    let timerInterval = null;
+    let startTime = 0;
+    let elapsedTime = 0;
+    let isPaused = false;
 
-        function roundTime() {
-            let minutes = Math.round(elapsedSeconds / 60);
-            let remainder = minutes % 5;
-            if (remainder < 3) {
-                minutes -= remainder;
-            } else {
-                minutes += (5 - remainder);
-            }
-            elapsedSeconds = minutes * 60;
-            updateStopwatch();
+    function createWorkOrder() {
+        const workOrderName = document.getElementById("workOrderName").value;
+        if (workOrderName) {
+            currentWorkOrder = {
+                name: workOrderName,
+                activities: []
+            };
+            workOrders.push(currentWorkOrder);
+            document.getElementById("workOrderName").value = '';
+            document.getElementById("workOrderSection").style.display = 'none';
+            document.getElementById("activitySection").style.display = 'block';
+            document.getElementById("activityListSection").style.display = 'block';
+            displayActivities();
+            document.getElementById("saveButton").disabled = false;  // Enable Save button
         }
+    }
 
-        function adjustTime(amount) {
-            elapsedSeconds = Math.max(0, elapsedSeconds + amount * 60);
-            updateStopwatch();
+    function startActivity() {
+        const activityName = document.getElementById("activityName").value;
+        if (activityName) {
+            currentActivity = {
+                name: activityName,
+                time: 0
+            };
+            currentWorkOrder.activities.push(currentActivity);
+            document.getElementById("activityName").value = '';
+            startTime = Date.now() - elapsedTime;
+            isPaused = false;
+            timerInterval = setInterval(updateTimer, 1000);
+            document.getElementById("pauseButton").disabled = false;
+            document.getElementById("resumeButton").disabled = true;
+            document.getElementById("endButton").disabled = false;
         }
-    </script>
+    }
+
+    function updateTimer() {
+        if (!isPaused) {
+            elapsedTime = Date.now() - startTime;
+        }
+        const hours = Math.floor(elapsedTime / 3600000);
+        const minutes = Math.floor((elapsedTime % 3600000) / 60000);
+        const seconds = Math.floor((elapsedTime % 60000) / 1000);
+        document.getElementById("timerDisplay").textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    function pad(num) {
+        return num < 10 ? `0${num}` : num;
+    }
+
+    function pauseTimer() {
+        isPaused = true;
+        document.getElementById("pauseButton").disabled = true;
+        document.getElementById("resumeButton").disabled = false;
+    }
+
+    function resumeTimer() {
+        isPaused = false;
+        startTime = Date.now() - elapsedTime;
+        document.getElementById("pauseButton").disabled = false;
+        document.getElementById("resumeButton").disabled = true;
+    }
+
+    function endActivity() {
+        clearInterval(timerInterval);
+        currentActivity.time = elapsedTime;
+        resetTimer();
+        displayActivities();
+        document.getElementById("pauseButton").disabled = true;
+        document.getElementById("resumeButton").disabled = true;
+        document.getElementById("endButton").disabled = true;
+    }
+
+    function resetTimer() {
+        elapsedTime = 0;
+        document.getElementById("timerDisplay").textContent = "00:00:00";
+        startTime = Date.now();
+    }
+
+    function displayActivities() {
+        const activityListDiv = document.getElementById("activityList");
+        activityListDiv.innerHTML = '';
+        currentWorkOrder.activities.forEach((activity, index) => {
+            const activityDiv = document.createElement("div");
+            activityDiv.className = "activity";
+            activityDiv.innerHTML = `
+                <strong>${activity.name}</strong> - ${formatTime(activity.time)} <br>
+                <button onclick="editActivity(${index})">Bewerken</button>
+                <button onclick="confirmDeleteActivity(${index})">Verwijderen</button>
+                <div id="editButtons${index}" class="edit-time-buttons" style="display:${activity.isEditing ? 'block' : 'none'};">
+                    <input type="text" id="editActivityName${index}" value="${activity.name}">
+                    <button onclick="adjustTime(${index}, -5)">-5 min</button>
+                    <button onclick="adjustTime(${index}, -10)">-10 min</button>
+                    <button onclick="adjustTime(${index}, -30)">-30 min</button>
+                    <button onclick="adjustTime(${index}, 5)">+5 min</button>
+                    <button onclick="adjustTime(${index}, 10)">+10 min</button>
+                    <button onclick="adjustTime(${index}, 30)">+30 min</button>
+                    <button onclick="saveActivity(${index})">Opslaan</button>
+                </div>
+            `;
+            activityListDiv.appendChild(activityDiv);
+        });
+    }
+
+    function formatTime(ms) {
+        const hours = Math.floor(ms / 3600000);
+        const minutes = Math.floor((ms % 3600000) / 60000);
+        const seconds = Math.floor((ms % 60000) / 1000);
+        return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    function editActivity(index) {
+        currentWorkOrder.activities[index].isEditing = true;
+        displayActivities();
+    }
+
+    function adjustTime(index, minutes) {
+        const activity = currentWorkOrder.activities[index];
+        activity.time += minutes * 60000;
+        displayActivities();
+    }
+
+    function saveActivity(index) {
+        const newName = document.getElementById(`editActivityName${index}`).value;
+        currentWorkOrder.activities[index].name = newName;
+        currentWorkOrder.activities[index].isEditing = false;
+        displayActivities();
+    }
+
+    function confirmDeleteActivity(index) {
+        const isConfirmed = confirm("Weet je zeker dat je deze activiteit wilt verwijderen?");
+        if (isConfirmed) {
+            deleteActivity(index);
+        }
+    }
+
+    function deleteActivity(index) {
+        currentWorkOrder.activities.splice(index, 1);
+        displayActivities();
+    }
+
+    // Werkbon opslaan in localStorage
+    function saveWorkOrder() {
+        if (currentWorkOrder) {
+            localStorage.setItem(currentWorkOrder.name, JSON.stringify(currentWorkOrder));
+            alert("Werkbon opgeslagen!");
+            document.getElementById("activitySection").style.display = 'none';
+            document.getElementById("workOrderSection").style.display = 'block';
+            document.getElementById("saveButton").disabled = true;
+            displaySavedWorkOrders();
+        }
+    }
+
+    // Weergeven van opgeslagen werkbonnen
+    function displaySavedWorkOrders() {
+        const savedWorkOrdersList = document.getElementById("savedWorkOrdersList");
+        savedWorkOrdersList.innerHTML = '';
+        Object.keys(localStorage).forEach(key => {
+            const workOrder = JSON.parse(localStorage.getItem(key));
+            const workOrderDiv = document.createElement("div");
+            workOrderDiv.innerHTML = `
+                <strong>${workOrder.name}</strong>
+                <button onclick="loadWorkOrder('${workOrder.name}')">Open</button>
+                <button onclick="confirmDeleteWorkOrder('${workOrder.name}')">Verwijderen</button>
+                <button onclick="exportWorkOrder('${workOrder.name}')">Werkbon Exporteren</button>
+            `;
+            savedWorkOrdersList.appendChild(workOrderDiv);
+        });
+    }
+
+    // Bevestiging voor het verwijderen van een werkbon
+    function confirmDeleteWorkOrder(workOrderName) {
+        const isConfirmed = confirm("Weet je zeker dat je deze werkbon wilt verwijderen?");
+        if (isConfirmed) {
+            deleteWorkOrder(workOrderName);
+        }
+    }
+
+    function deleteWorkOrder(workOrderName) {
+        localStorage.removeItem(workOrderName);
+        displaySavedWorkOrders();
+    }
+
+    // Werkbon laden
+    function loadWorkOrder(workOrderName) {
+        const loadedWorkOrder = JSON.parse(localStorage.getItem(workOrderName));
+        if (loadedWorkOrder) {
+            currentWorkOrder = loadedWorkOrder;
+            document.getElementById("workOrderName").value = currentWorkOrder.name;
+            document.getElementById("workOrderSection").style.display = 'none';
+            document.getElementById("activitySection").style.display = 'block';
+            document.getElementById("activityListSection").style.display = 'block';
+            displayActivities();
+        }
+    }
+
+    // Werkbon exporteren naar tekstbestand
+    function exportWorkOrder(workOrderName) {
+        const workOrder = JSON.parse(localStorage.getItem(workOrderName));
+        if (workOrder) {
+            let textContent = `Werkbon: ${workOrder.name}\n\n`;
+            workOrder.activities.forEach(activity => {
+                textContent += `Activiteit: ${activity.name} - Tijd: ${formatTime(activity.time)}\n`;
+            });
+
+            const blob = new Blob([textContent], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${workOrder.name}.txt`;
+            link.click();
+        }
+    }
+
+    // Initialisatie
+    window.onload = function() {
+        displaySavedWorkOrders();
+    }
+</script>
+
 </body>
 </html>
