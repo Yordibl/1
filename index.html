@@ -6,38 +6,54 @@
     <title>Urenregistratie</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
+    <script>
+        function toonSectie(sectie) {
+            document.getElementById("menu").style.display = "none";
+            document.getElementById("nieuweWerkbon").style.display = "none";
+            document.getElementById("openWerkbon").style.display = "none";
+            document.getElementById(sectie).style.display = "block";
+        }
+    </script>
 </head>
 <body>
-    <h1>Urenregistratie</h1>
+    <div id="menu">
+        <h1>Urenregistratie</h1>
+        <button onclick="toonSectie('nieuweWerkbon')">Nieuwe werkbon aanmaken</button>
+        <button onclick="toonSectie('openWerkbon')">Open werkbon</button>
+    </div>
     
-    <h2>Nieuwe urenbon</h2>
-    <form id="urenbonForm">
-        <label>Naam urenbon: <input type="text" id="urenbonNaam" required></label>
-        <button type="submit">Aanmaken</button>
-    </form>
+    <div id="nieuweWerkbon" style="display:none;">
+        <h2>Nieuwe urenbon</h2>
+        <form id="urenbonForm">
+            <label>Naam urenbon: <input type="text" id="urenbonNaam" required></label>
+            <button type="submit">Aanmaken</button>
+        </form>
+    </div>
     
-    <h2>Bestaande urenbonnen</h2>
-    <select id="urenbonSelect"></select>
-    <button onclick="wisselUrenbon()">Laden</button>
-    
-    <h2>Uren invoeren</h2>
-    <form id="urenForm">
-        <label>Datum: <input type="date" id="datum" required></label><br>
-        <label>Starttijd: <input type="time" id="starttijd" required></label><br>
-        <label>Eindtijd: <input type="time" id="eindtijd" required></label><br>
-        <label>Beschrijving: <input type="text" id="beschrijving"></label><br>
-        <button type="submit">Toevoegen</button>
-    </form>
-    
-    <h2>Stopwatch</h2>
-    <button onclick="startStopwatch()">Start</button>
-    <button onclick="stopStopwatch()">Stop</button>
-    <button onclick="resetStopwatch()">Reset</button>
-    <p>Gewerkte tijd: <span id="stopwatchDisplay">00:00:00</span></p>
-    
-    <h2>Gewerkte uren</h2>
-    <ul id="urenLijst"></ul>
-    <p><strong>Totaal gewerkte uren:</strong> <span id="totaalUren">0</span> uur</p>
+    <div id="openWerkbon" style="display:none;">
+        <h2>Bestaande urenbonnen</h2>
+        <select id="urenbonSelect"></select>
+        <button onclick="wisselUrenbon()">Laden</button>
+        
+        <h2>Uren invoeren</h2>
+        <form id="urenForm">
+            <label>Datum: <input type="date" id="datum" required></label><br>
+            <label>Starttijd: <input type="time" id="starttijd" required></label><br>
+            <label>Eindtijd: <input type="time" id="eindtijd" required></label><br>
+            <label>Beschrijving: <input type="text" id="beschrijving"></label><br>
+            <button type="submit">Toevoegen</button>
+        </form>
+        
+        <h2>Stopwatch</h2>
+        <button onclick="startStopwatch()">Start</button>
+        <button onclick="stopStopwatch()">Stop</button>
+        <button onclick="resetStopwatch()">Reset</button>
+        <p>Gewerkte tijd: <span id="stopwatchDisplay">00:00:00</span></p>
+        
+        <h2>Gewerkte uren</h2>
+        <ul id="urenLijst"></ul>
+        <p><strong>Totaal gewerkte uren:</strong> <span id="totaalUren">0</span> uur</p>
+    </div>
     
     <script>
         let huidigeUrenbon = localStorage.getItem("huidigeUrenbon") || "Standaard";
@@ -58,78 +74,6 @@
             laadUrenbonnen();
             toonUren();
         });
-        
-        document.getElementById("urenForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-            
-            let datum = document.getElementById("datum").value;
-            let starttijd = document.getElementById("starttijd").value;
-            let eindtijd = document.getElementById("eindtijd").value;
-            let beschrijving = document.getElementById("beschrijving").value;
-            
-            let item = { datum, starttijd, eindtijd, beschrijving };
-            let uren = JSON.parse(localStorage.getItem(huidigeUrenbon)) || [];
-            uren.push(item);
-            localStorage.setItem(huidigeUrenbon, JSON.stringify(uren));
-            
-            toonUren();
-        });
-        
-        function startStopwatch() {
-            stopwatchStart = new Date();
-            stopwatchInterval = setInterval(updateStopwatch, 1000);
-        }
-        
-        function stopStopwatch() {
-            clearInterval(stopwatchInterval);
-            let now = new Date();
-            let elapsed = new Date(now - stopwatchStart);
-            let hours = String(elapsed.getUTCHours()).padStart(2, '0');
-            let minutes = String(elapsed.getUTCMinutes()).padStart(2, '0');
-            let seconds = String(elapsed.getUTCSeconds()).padStart(2, '0');
-            
-            document.getElementById("starttijd").value = stopwatchStart.toTimeString().substring(0, 5);
-            document.getElementById("eindtijd").value = now.toTimeString().substring(0, 5);
-        }
-        
-        function resetStopwatch() {
-            clearInterval(stopwatchInterval);
-            document.getElementById("stopwatchDisplay").textContent = "00:00:00";
-        }
-        
-        function updateStopwatch() {
-            let now = new Date();
-            let elapsed = new Date(now - stopwatchStart);
-            let hours = String(elapsed.getUTCHours()).padStart(2, '0');
-            let minutes = String(elapsed.getUTCMinutes()).padStart(2, '0');
-            let seconds = String(elapsed.getUTCSeconds()).padStart(2, '0');
-            document.getElementById("stopwatchDisplay").textContent = `${hours}:${minutes}:${seconds}`;
-        }
-        
-        function toonUren() {
-            let uren = JSON.parse(localStorage.getItem(huidigeUrenbon)) || [];
-            let lijst = document.getElementById("urenLijst");
-            lijst.innerHTML = "";
-            let totaalMinuten = 0;
-            
-            uren.forEach((item, index) => {
-                let li = document.createElement("li");
-                let duur = berekenDuur(item.starttijd, item.eindtijd);
-                totaalMinuten += duur;
-                li.innerHTML = `${item.datum}: ${item.starttijd} - ${item.eindtijd} (${item.beschrijving}) 
-                <button onclick="verwijderUur(${index})">❌</button>`;
-                lijst.appendChild(li);
-            });
-            
-            document.getElementById("totaalUren").textContent = (totaalMinuten / 60).toFixed(2);
-        }
-        
-        function berekenDuur(start, einde) {
-            let startTijd = start.split(":"), eindTijd = einde.split(":");
-            let startMinuten = parseInt(startTijd[0]) * 60 + parseInt(startTijd[1]);
-            let eindMinuten = parseInt(eindTijd[0]) * 60 + parseInt(eindTijd[1]);
-            return eindMinuten - startMinuten;
-        }
         
         function laadUrenbonnen() {
             let urenbonnen = JSON.parse(localStorage.getItem("urenbonnen")) || ["Standaard"];
