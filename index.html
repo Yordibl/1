@@ -13,9 +13,14 @@
             document.getElementById("openWerkbon").style.display = "none";
             document.getElementById(sectie).style.display = "block";
         }
+
+        function zetDatumVandaag() {
+            let vandaag = new Date().toISOString().split('T')[0];
+            document.getElementById("datum").value = vandaag;
+        }
     </script>
 </head>
-<body>
+<body onload="zetDatumVandaag()">
     <div id="menu">
         <h1>Urenregistratie</h1>
         <button onclick="toonSectie('nieuweWerkbon')">Nieuwe werkbon aanmaken</button>
@@ -37,55 +42,66 @@
         
         <h2>Uren invoeren</h2>
         <form id="urenForm">
-            <label>Datum: <input type="date" id="datum" required></label><br>
-            <label>Starttijd: <input type="time" id="starttijd" required></label><br>
-            <label>Eindtijd: <input type="time" id="eindtijd" required></label><br>
+            <label>Datum: <input type="date" id="datum"></label><br>
             <label>Beschrijving: <input type="text" id="beschrijving"></label><br>
-            <button type="submit">Toevoegen</button>
+            <button type="button" onclick="startStopwatch()">Start</button>
+            <button type="button" onclick="stopStopwatch()">Stop</button>
+            <button type="button" onclick="resetStopwatch()">Reset</button>
+            <p>Gewerkte tijd: <span id="stopwatchDisplay">00:00:00</span></p>
+            <button type="button" onclick="adjustTime(5)">+5 min</button>
+            <button type="button" onclick="adjustTime(10)">+10 min</button>
+            <button type="button" onclick="adjustTime(30)">+30 min</button>
+            <button type="button" onclick="adjustTime(60)">+60 min</button>
+            <button type="button" onclick="adjustTime(-5)">-5 min</button>
+            <button type="button" onclick="adjustTime(-10)">-10 min</button>
+            <button type="button" onclick="adjustTime(-30)">-30 min</button>
+            <button type="button" onclick="adjustTime(-60)">-60 min</button>
         </form>
-        
-        <h2>Stopwatch</h2>
-        <button onclick="startStopwatch()">Start</button>
-        <button onclick="stopStopwatch()">Stop</button>
-        <button onclick="resetStopwatch()">Reset</button>
-        <p>Gewerkte tijd: <span id="stopwatchDisplay">00:00:00</span></p>
-        
-        <h2>Gewerkte uren</h2>
-        <ul id="urenLijst"></ul>
-        <p><strong>Totaal gewerkte uren:</strong> <span id="totaalUren">0</span> uur</p>
     </div>
     
     <script>
-        let huidigeUrenbon = localStorage.getItem("huidigeUrenbon") || "Standaard";
-        let stopwatchInterval;
-        let stopwatchStart;
-        laadUrenbonnen();
-        toonUren();
+        let stopwatchStart, stopwatchInterval, elapsedSeconds = 0;
         
-        document.getElementById("urenbonForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-            let naam = document.getElementById("urenbonNaam").value;
-            let urenbonnen = JSON.parse(localStorage.getItem("urenbonnen")) || [];
-            if (!urenbonnen.includes(naam)) {
-                urenbonnen.push(naam);
-                localStorage.setItem("urenbonnen", JSON.stringify(urenbonnen));
+        function startStopwatch() {
+            stopwatchStart = Date.now() - (elapsedSeconds * 1000);
+            stopwatchInterval = setInterval(updateStopwatch, 1000);
+        }
+
+        function stopStopwatch() {
+            clearInterval(stopwatchInterval);
+            roundTime();
+        }
+
+        function resetStopwatch() {
+            clearInterval(stopwatchInterval);
+            elapsedSeconds = 0;
+            document.getElementById("stopwatchDisplay").textContent = "00:00:00";
+        }
+
+        function updateStopwatch() {
+            elapsedSeconds = Math.floor((Date.now() - stopwatchStart) / 1000);
+            let hours = Math.floor(elapsedSeconds / 3600);
+            let minutes = Math.floor((elapsedSeconds % 3600) / 60);
+            let seconds = elapsedSeconds % 60;
+            document.getElementById("stopwatchDisplay").textContent = 
+                `${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+        }
+
+        function roundTime() {
+            let minutes = Math.round(elapsedSeconds / 60);
+            let remainder = minutes % 5;
+            if (remainder < 3) {
+                minutes -= remainder;
+            } else {
+                minutes += (5 - remainder);
             }
-            localStorage.setItem("huidigeUrenbon", naam);
-            laadUrenbonnen();
-            toonUren();
-        });
-        
-        function laadUrenbonnen() {
-            let urenbonnen = JSON.parse(localStorage.getItem("urenbonnen")) || ["Standaard"];
-            let select = document.getElementById("urenbonSelect");
-            select.innerHTML = "";
-            urenbonnen.forEach(naam => {
-                let option = document.createElement("option");
-                option.value = naam;
-                option.textContent = naam;
-                if (naam === huidigeUrenbon) option.selected = true;
-                select.appendChild(option);
-            });
+            elapsedSeconds = minutes * 60;
+            updateStopwatch();
+        }
+
+        function adjustTime(amount) {
+            elapsedSeconds = Math.max(0, elapsedSeconds + amount * 60);
+            updateStopwatch();
         }
     </script>
 </body>
