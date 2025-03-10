@@ -29,12 +29,20 @@
         <button type="submit">Toevoegen</button>
     </form>
     
+    <h2>Stopwatch</h2>
+    <button onclick="startStopwatch()">Start</button>
+    <button onclick="stopStopwatch()">Stop</button>
+    <button onclick="resetStopwatch()">Reset</button>
+    <p>Gewerkte tijd: <span id="stopwatchDisplay">00:00:00</span></p>
+    
     <h2>Gewerkte uren</h2>
     <ul id="urenLijst"></ul>
     <p><strong>Totaal gewerkte uren:</strong> <span id="totaalUren">0</span> uur</p>
     
     <script>
         let huidigeUrenbon = localStorage.getItem("huidigeUrenbon") || "Standaard";
+        let stopwatchInterval;
+        let stopwatchStart;
         laadUrenbonnen();
         toonUren();
         
@@ -67,6 +75,37 @@
             toonUren();
         });
         
+        function startStopwatch() {
+            stopwatchStart = new Date();
+            stopwatchInterval = setInterval(updateStopwatch, 1000);
+        }
+        
+        function stopStopwatch() {
+            clearInterval(stopwatchInterval);
+            let now = new Date();
+            let elapsed = new Date(now - stopwatchStart);
+            let hours = String(elapsed.getUTCHours()).padStart(2, '0');
+            let minutes = String(elapsed.getUTCMinutes()).padStart(2, '0');
+            let seconds = String(elapsed.getUTCSeconds()).padStart(2, '0');
+            
+            document.getElementById("starttijd").value = stopwatchStart.toTimeString().substring(0, 5);
+            document.getElementById("eindtijd").value = now.toTimeString().substring(0, 5);
+        }
+        
+        function resetStopwatch() {
+            clearInterval(stopwatchInterval);
+            document.getElementById("stopwatchDisplay").textContent = "00:00:00";
+        }
+        
+        function updateStopwatch() {
+            let now = new Date();
+            let elapsed = new Date(now - stopwatchStart);
+            let hours = String(elapsed.getUTCHours()).padStart(2, '0');
+            let minutes = String(elapsed.getUTCMinutes()).padStart(2, '0');
+            let seconds = String(elapsed.getUTCSeconds()).padStart(2, '0');
+            document.getElementById("stopwatchDisplay").textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        
         function toonUren() {
             let uren = JSON.parse(localStorage.getItem(huidigeUrenbon)) || [];
             let lijst = document.getElementById("urenLijst");
@@ -78,31 +117,11 @@
                 let duur = berekenDuur(item.starttijd, item.eindtijd);
                 totaalMinuten += duur;
                 li.innerHTML = `${item.datum}: ${item.starttijd} - ${item.eindtijd} (${item.beschrijving}) 
-                <button onclick="bewerkUur(${index})">✏️</button>
                 <button onclick="verwijderUur(${index})">❌</button>`;
                 lijst.appendChild(li);
             });
             
             document.getElementById("totaalUren").textContent = (totaalMinuten / 60).toFixed(2);
-        }
-        
-        function bewerkUur(index) {
-            let uren = JSON.parse(localStorage.getItem(huidigeUrenbon)) || [];
-            let item = uren[index];
-            
-            document.getElementById("datum").value = item.datum;
-            document.getElementById("starttijd").value = item.starttijd;
-            document.getElementById("eindtijd").value = item.eindtijd;
-            document.getElementById("beschrijving").value = item.beschrijving;
-            
-            verwijderUur(index);
-        }
-        
-        function verwijderUur(index) {
-            let uren = JSON.parse(localStorage.getItem(huidigeUrenbon)) || [];
-            uren.splice(index, 1);
-            localStorage.setItem(huidigeUrenbon, JSON.stringify(uren));
-            toonUren();
         }
         
         function berekenDuur(start, einde) {
@@ -123,13 +142,6 @@
                 if (naam === huidigeUrenbon) option.selected = true;
                 select.appendChild(option);
             });
-        }
-        
-        function wisselUrenbon() {
-            let select = document.getElementById("urenbonSelect");
-            huidigeUrenbon = select.value;
-            localStorage.setItem("huidigeUrenbon", huidigeUrenbon);
-            toonUren();
         }
     </script>
 </body>
